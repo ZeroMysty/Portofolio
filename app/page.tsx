@@ -5,7 +5,6 @@ export default function Home() {
       <p>Welcome to my website!</p>
       <p>I'm a software engineer with a passion for building cool stuff.</p>
       <p>Makan bg</p>
-      
     </main>
   )
 }
