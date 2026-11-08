@@ -1,6 +1,5 @@
 @import "tailwindcss";
 
-
 :root {
   --background: #ffffff;
   --foreground: #161108;
@@ -26,4 +25,46 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Untuk browser berbasis Webkit (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* Untuk Firefox */
+* {
+  scrollbar-width: none;
+}
+
+/* Untuk Internet Explorer dan Edge versi lama */
+* {
+  -ms-overflow-style: none;
+}
+
+/* Sembunyikan kursor bawaan browser pada perangkat desktop */
+@media (min-width: 768px) {
+  body {
+    cursor: none;
+  }
+  
+  /* Pastikan elemen interaktif tetap memicu pointer state */
+  a, button, input, select, textarea {
+    cursor: none;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

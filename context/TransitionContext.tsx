@@ -1,12 +1,16 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useRef } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 type TransitionStatus = "idle" | "closing" | "opening";
 
 interface TransitionContextType {
   status: TransitionStatus;
+  isMenuOpen: boolean;
+  openMenu: () => void;
+  closeMenu: () => void;
+  navigateFromMenu: (href: string) => void;
   startTransition: (href: string, callback: () => void) => void;
 }
 
@@ -14,45 +18,80 @@ const TransitionContext = createContext<TransitionContextType | undefined>(undef
 
 export function TransitionProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<TransitionStatus>("opening");
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
   const isNavigatingRef = useRef(false);
 
-  // Trigger "opening" animation whenever the pathname actually changes
+  // Trigger "opening" animation whenever pathname actually changes
   useEffect(() => {
     setStatus("opening");
+    setIsMenuOpen(false);
     isNavigatingRef.current = false;
-    const timer = setTimeout(() => setStatus("idle"), 800);
+    const timer = setTimeout(() => setStatus("idle"), 500);
     return () => clearTimeout(timer);
   }, [pathname]);
 
+  // Klik '=' -> berubah jadi 'x' dan tirai menutup (animasi closing curtain)
+  const openMenu = () => {
+    if (status === "closing" || isNavigatingRef.current) return;
+    setIsMenuOpen(true);
+    setStatus("closing");
+  };
+
+  // Klik 'x' (batal) -> tirai terbuka kembali (animasi opening curtain) dan 'x' kembali jadi '='
+  const closeMenu = () => {
+    setIsMenuOpen(false);
+    setStatus("opening");
+    setTimeout(() => {
+      setStatus("idle");
+    }, 500);
+  };
+
+  // Klik halaman baru di menu -> tirai terbuka (animasi opening curtain) dan 'x' berubah jadi '=' lagi
+  const navigateFromMenu = (href: string) => {
+    setIsMenuOpen(false);
+    const targetPath = href.split("?")[0].split("#")[0].replace(/\/$/, "") || "/";
+    const currentPath = pathname.replace(/\/$/, "") || "/";
+
+    if (targetPath === currentPath) {
+      // Halaman sama: cukup buka tirai kembali
+      setStatus("opening");
+      setTimeout(() => setStatus("idle"), 500);
+      return;
+    }
+
+    // Tirai sudah dalam posisi tertutup, langsung arahkan ke halaman baru
+    // Perubahan pathname di useEffect akan otomatis menjalankan animasi 'opening'
+    router.push(href);
+  };
+
   const startTransition = (href: string, callback: () => void) => {
-    // Prevent double-clicking during an active transition
-    if (status !== "idle" && !isNavigatingRef.current) return;
+    const targetPath = href.split("?")[0].split("#")[0].replace(/\/$/, "") || "/";
+    const currentPath = pathname.replace(/\/$/, "") || "/";
+
+    if (targetPath === currentPath) return;
+    if (status === "closing" || isNavigatingRef.current) return;
 
     setStatus("closing");
     isNavigatingRef.current = true;
 
-    // Wait for the closing animation to finish (0.8s)
     setTimeout(() => {
-      // Normalize href for comparison (remove trailing slashes, etc.)
-      const targetPath = href.split('?')[0].split('#')[0].replace(/\/$/, "") || "/";
-      const currentPath = pathname.replace(/\/$/, "") || "/";
-
-      if (targetPath === currentPath) {
-        // SAME PAGE: Manually trigger the opening animation since pathname won't change
-        callback(); 
-        setStatus("opening");
-        isNavigatingRef.current = false;
-        setTimeout(() => setStatus("idle"), 800);
-      } else {
-        // DIFFERENT PAGE: Perform navigation and let useEffect [pathname] handle the opening
-        callback();
-      }
-    }, 800);
+      callback();
+    }, 500);
   };
 
   return (
-    <TransitionContext.Provider value={{ status, startTransition }}>
+    <TransitionContext.Provider
+      value={{
+        status,
+        isMenuOpen,
+        openMenu,
+        closeMenu,
+        navigateFromMenu,
+        startTransition,
+      }}
+    >
       {children}
     </TransitionContext.Provider>
   );

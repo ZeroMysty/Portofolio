@@ -4,22 +4,24 @@ import { motion } from "framer-motion";
 import { useTransition } from "@/context/TransitionContext";
 
 export default function Curtain() {
-  const { status } = useTransition();
+  const { status, isMenuOpen } = useTransition();
 
-  const isIdle = status === "idle";
+  const isIdle = status === "idle" && !isMenuOpen;
 
   if (isIdle) return null;
 
+  const isClosed = status === "closing" || isMenuOpen;
+
   return (
     <>
-      {/* Panel Kiri: Bawah -> Tengah -> Atas */}
+      {/* Panel Kiri: Bawah -> Tengah (0%) -> Atas (-100%) */}
       <motion.div
         initial={{ y: "100%" }}
         animate={{ 
-          y: status === "closing" ? "0%" : "-100%" 
+          y: isClosed ? "0%" : "-100%" 
         }}
         transition={{
-          duration: 0.8,
+          duration: 0.5,
           ease: [0.76, 0, 0.24, 1],
         }}
         style={{
@@ -30,17 +32,18 @@ export default function Curtain() {
           height: "100vh",
           backgroundColor: "#beb4a7",
           zIndex: 9999,
+          pointerEvents: "none",
         }}
       />
 
-      {/* Panel Kanan: Atas -> Tengah -> Bawah */}
+      {/* Panel Kanan: Atas -> Tengah (0%) -> Bawah (100%) */}
       <motion.div
         initial={{ y: "-100%" }}
         animate={{ 
-          y: status === "closing" ? "0%" : "100%" 
+          y: isClosed ? "0%" : "100%" 
         }}
         transition={{
-          duration: 0.8,
+          duration: 0.5,
           ease: [0.76, 0, 0.24, 1],
         }}
         style={{
@@ -51,6 +54,7 @@ export default function Curtain() {
           height: "100vh",
           backgroundColor: "#beb4a7",
           zIndex: 9999,
+          pointerEvents: "none",
         }}
       />
     </>
